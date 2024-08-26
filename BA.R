@@ -166,3 +166,13 @@ final_df2_cleaned <- final_df2_cleaned %>%
 
 
 
+
+write.csv(final_df2_cleaned, file = "/home/justin.simon/repos/BA/Testdaten/final_df2_cleaned.csv", row.names = FALSE)
+
+# Bestätigung ausgeben
+cat("DataFrame wurde in '/home/justin.simon/repos/BA/Testdaten/final_df2_cleaned.csv' gespeichert.\n")
+
+
+
+
+
