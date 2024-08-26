@@ -16,7 +16,7 @@ print(unique_counts)
 measure_fail_code_per_booking <- data %>%
   group_by(BOOKING_ID) %>%
   summarize(Gesamt_MEASURE_FAIL_CODE = ifelse(any(MEASURE_FAIL_CODE == 1), 1, 0))
-
+print(measure_fail_code_per_booking)
 
 # Filtern der MEASURE_NAMEs, die mindestens 1000 Einträge haben
 valid_measure_names <- data %>%
@@ -24,7 +24,7 @@ valid_measure_names <- data %>%
   summarize(Frequency = n()) %>%
   filter(Frequency >= 1000) %>%
   pull(MEASURE_NAME)
-
+print(valid_measure_names)
 
 # Filterung der Daten auf valide MEASURE_NAMEs
 data_filtered <- data %>%
@@ -55,8 +55,34 @@ invalid_measure_names <- invalid_measure_values_count %>%
 # Filterung der Daten auf valide MEASURE_NAMEs
 data_filtered2 <- data_filtered %>%
   filter(!MEASURE_NAME %in% invalid_measure_names$MEASURE_NAME)
+print(dim(data_filtered2))
 
+# Erstellen des DataFrames mit BOOKING_ID und den neuen Spalten aus Variants
+all_columns <- unique(unlist(valid_measure_names$Variants))
+new_df <- data.frame(BOOKING_ID = unique(data_filtered2$BOOKING_ID))
 
+for (col in all_columns) {
+  new_df[[col]] <- 0
+}
+
+# Füllen des DataFrames new_df mit 1 bei Übereinstimmung von BOOKING_ID und MEASURE_VALUE
+for (i in 1:nrow(data_filtered2)) {
+  booking_id <- data_filtered2$BOOKING_ID[i]
+  measure_value <- data_filtered2$MEASURE_VALUE[i]
+  
+  if (measure_value %in% colnames(new_df)) {
+    new_df[new_df$BOOKING_ID == booking_id, measure_value] <- 1
+  }
+}
+
+# Ausgabe zur Überprüfung
+print(new_df)
+
+# Zählen der 1-Werte pro Spalte und insgesamt
+ones_per_column <- colSums(new_df[, -1])
+print(ones_per_column)
+total_ones <- sum(ones_per_column)
+cat("Gesamtanzahl der 1-Werte im DataFrame:", total_ones, "\n")
 
 # Pivotieren der Daten, Hinzufügen von Zusatzinformationen und Zusammenführen
 data_wide <- data_filtered2 %>%
@@ -75,94 +101,9 @@ additional_info <- data_filtered2 %>%
 
 final_df <- data_wide %>%
   left_join(measure_fail_code_per_booking, by = "BOOKING_ID") %>%
-  left_join(additional_info, by = "BOOKING_ID") 
+  left_join(additional_info, by = "BOOKING_ID") %>%
+  left_join(new_df, by = "BOOKING_ID") %>%
+  mutate(across(everything(), ~ replace_na(., "-100")))
 
-
-
-
-if ("ComputerName" %in% names(final_df)) {
-  print("Die Spalte 'ComputerName' existiert im Dataframe.")
-} else {
-  print("Die Spalte 'ComputerName' existiert nicht im Dataframe.")
-}
-
-
-formula <- ~ ComputerName + DMM_SN + `Messergebnis DMC`
-
-dummies <- dummyVars(formula, data = final_df)
-one_hot_encoded <- predict(dummies, newdata = final_df)
-one_hot_encoded_df <- as.data.frame(one_hot_encoded)
-one_hot_encoded_df[is.na(one_hot_encoded_df)] <- 0
-final_df <- cbind(final_df, one_hot_encoded_df)
-
-
-
-
-final_df2 <- final_df %>%
-  mutate(
-    D = ifelse(grepl("D", MEASURE_TYPE), 1, 0),
-    T = ifelse(grepl("T", MEASURE_TYPE), 1, 0)
-  ) %>%
-  select(-MEASURE_TYPE)
-
-
-final_df2 <- final_df2[, !(names(final_df2) %in% c("ComputerName", "DMM_SN", "Messergebnis DMC"))]
-
-
-final_df2$WORKORDER_NUMBER <- as.numeric(substr(final_df2$WORKORDER_NUMBER, 1, nchar(final_df2$WORKORDER_NUMBER) - 3))
-
-contains_negative_one <- any(final_df2 == -1)
-contains_negative_one
-count_negative_one <- sum(final_df2 <= 0, na.rm = TRUE)
-count_negative_one
-
-
-
-
-
-
-
-
-
-rows_to_remove <- apply(final_df2, 1, function(row) any(row == -1, na.rm = TRUE))
-
-# Entfernen der betroffenen Zeilen
-final_df2_cleaned <- final_df2[!rows_to_remove, ]
-
-# Ergebnis anzeigen
-print(final_df2_cleaned)
-
-
-
-
-
-
-
-
-count_negative_if_na <- function(column) {
-  if (any(is.na(column))) {
-    return(sum(column == -1, na.rm = TRUE))
-  } else {
-    return(0)
-  }
-}
-
-# Zähler für jede Spalte initialisieren
-negative_counts <- sapply(final_df2_cleaned, count_negative_if_na)
-
-# In DataFrame umwandeln
-result_df <- data.frame(Spalte = names(negative_counts), Zähler = negative_counts)
-
-# Ergebnis anzeigen
-print(result_df)
-
-
-
-
-
-
-final_df2_cleaned <- final_df2_cleaned %>%
-  mutate(across(everything(), ~ ifelse(is.na(.), -1, .)))
-
-
-
+# Prüfen des Ergebnisses
+print(head(final_df))
