@@ -166,6 +166,37 @@ final_df2_cleaned <- final_df2_cleaned %>%
 
 
 
+convert_to_numeric <- function(df) {
+  df <- as.data.frame(lapply(df, function(x) {
+    # Ersetze Kommas durch Punkte
+    x <- gsub(",", ".", x)
+    
+    # Wandle den Text in numerische Werte um
+    num_x <- as.numeric(x)
+    
+    # Überprüfe, ob die Umwandlung fehlgeschlagen ist und versuche es als numerische Umwandlung
+    if (any(is.na(num_x)) && !all(is.na(x))) {
+      num_x <- as.numeric(as.character(x))
+    }
+    
+    return(num_x)
+  }))
+  return(df)
+}
+
+# Wandle alle Spalten in numerische Werte um
+final_df2_cleaned <- convert_to_numeric(final_df2_cleaned)
+
+# Überprüfe die Struktur des neuen DataFrames
+str(final_df2_cleaned)
+
+# Überprüfe, ob noch Nicht-Numerische Werte vorhanden sind
+any(is.na(final_df2_cleaned))
+
+
+
+
+
 
 write.csv(final_df2_cleaned, file = "/home/justin.simon/repos/BA/Testdaten/final_df2_cleaned.csv", row.names = FALSE)
 

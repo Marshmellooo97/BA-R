@@ -10,6 +10,8 @@ final_df2_loaded <- read.csv(file_path, stringsAsFactors = FALSE)
 
 
 
+
+
 convert_to_numeric <- function(df) {
 	df <- as.data.frame(lapply(df, function(x) {
 		# Ersetze Kommas durch Punkte
@@ -39,10 +41,6 @@ any(is.na(final_df2_loaded))
 
 
 
-
-
-str(final_df2_numeric)
-
 x <- final_df2_loaded[, !names(final_df2_loaded) %in% "Gesamt_MEASURE_FAIL_CODE"]
 y <- final_df2_loaded$Gesamt_MEASURE_FAIL_CODE
 
@@ -63,19 +61,29 @@ xTest <- predict(newScaler, xTest)
 
 
 # Labels in Datenrahmen umwandeln und Spaltennamen setzen
-yTrain <- as.data.frame(yTrain)
-yTestScale <- as.data.frame(yTest)
-colnames(yTrain) <- 'Gesamt_MEASURE_FAIL_CODE'
-colnames(yTestScale) <- 'Gesamt_MEASURE_FAIL_CODE'
+#yTrain <- as.data.frame(yTrain)
+#yTestScale <- as.data.frame(yTest)
+#colnames(yTrain) <- 'Gesamt_MEASURE_FAIL_CODE'
+#colnames(yTestScale) <- 'Gesamt_MEASURE_FAIL_CODE'
 
 
 # Skalierungsobjekt für Labels erstellen und skalieren
-scalerLabels <- caret::preProcess(yTrain, method = 'range')
-yTrain <- predict(scalerLabels, yTrain)
-yTestScale <- predict(scalerLabels, yTestScale)
+#scalerLabels <- caret::preProcess(yTrain, method = 'range')
+#yTrain <- predict(scalerLabels, yTrain)
+#yTestScale <- predict(scalerLabels, yTestScale)
 
-yTrain <- unlist(yTrain)
-yTestScale <- unlist(yTestScale)
+#yTrain <- unlist(yTrain)
+#yTestScale <- unlist(yTestScale)
+
+
+
+
+xTrain <- as.data.frame(lapply(xTrain, as.numeric))
+yTrain <- as.factor(yTrain)
+
+
+xTrain <- as.data.frame(xTrain)
+xTrain_matrix <- as.matrix(xTrain)
 
 
 model <- train(
@@ -84,11 +92,66 @@ model <- train(
 	method = 'mlp',
 	trControl = trainControl(
 		method = 'cv', 
-		number = 10, 
+		number = 2, 
 		verboseIter = TRUE  # Zeigt Fortschrittsmeldungen in der Konsole an
 	),
 	tuneGrid = expand.grid(
-		size = c(100, 200, 400, 600, 800, 1000)
+		size = c(20, 50)
 	),
 	verbose = TRUE
 )
+
+
+
+
+
+
+
+
+model_rf <- train(
+	x = xTrain, 
+	y = yTrain,
+	method = 'rf',
+	trControl = trainControl(
+		method = 'cv', 
+		number = 10, 
+		verboseIter = TRUE
+	),
+	tuneGrid = expand.grid(
+		mtry = c(2, 4, 6, 8)  # Anpassen basierend auf der Anzahl der Features
+	),
+	verbose = TRUE
+)
+
+
+
+model_gbm <- train(
+	x = xTrain, 
+	y = yTrain,
+	method = 'gbm',
+	trControl = trainControl(
+		method = 'cv', 
+		number = 10, 
+		verboseIter = TRUE
+	),
+	tuneGrid = expand.grid(
+		n.trees = c(100, 200, 300),
+		interaction.depth = c(1, 3, 5),
+		shrinkage = c(0.01, 0.1),
+		n.minobsinnode = c(10, 20)
+	),
+	verbose = TRUE
+)
+
+vorhersage <- predict(model_rf, xTest)
+
+yTest <- factor(yTest)
+vorhersage <- factor(vorhersage, levels = levels(yTest))
+
+# Erstellen der Verwirrungsmatrix
+conf_matrix <- confusionMatrix(vorhersage, yTest)
+
+# Anzeige der Verwirrungsmatrix
+print(conf_matrix)
+
+print(vorhersage)
