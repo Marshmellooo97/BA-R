@@ -3,7 +3,8 @@ library(dplyr)
 library(tidyr)
 library(caret)
 
-file_path <- "/home/justin.simon/repos/BA/Testdaten/final_df2_cleaned.csv"
+#file_path <- "/home/justin.simon/repos/BA/Testdaten/final_df2_cleaned.csv"
+file_path <- "C:/Programmieren/BA/Testdaten/final_df2_cleaned.csv"
 
 # CSV-Datei als DataFrame laden
 final_df2_loaded <- read.csv(file_path, stringsAsFactors = FALSE)
@@ -75,10 +76,15 @@ xTest <- predict(newScaler, xTest)
 #yTrain <- unlist(yTrain)
 #yTestScale <- unlist(yTestScale)
 
-write.csv(xTrain, file = "/home/justin.simon/repos/BA/Testdaten/xTrain.csv", row.names = FALSE)
-write.csv(xTest, file = "/home/justin.simon/repos/BA/Testdaten/xTest.csv", row.names = FALSE)
-write.csv(yTrain, file = "/home/justin.simon/repos/BA/Testdaten/yTrain.csv", row.names = FALSE)
-write.csv(yTest, file = "/home/justin.simon/repos/BA/Testdaten/yTest.csv", row.names = FALSE)
+#write.csv(xTrain, file = "/home/justin.simon/repos/BA/Testdaten/xTrain.csv", row.names = FALSE)
+#write.csv(xTest, file = "/home/justin.simon/repos/BA/Testdaten/xTest.csv", row.names = FALSE)
+#write.csv(yTrain, file = "/home/justin.simon/repos/BA/Testdaten/yTrain.csv", row.names = FALSE)
+#write.csv(yTest, file = "/home/justin.simon/repos/BA/Testdaten/yTest.csv", row.names = FALSE)
+
+write.csv(xTrain, file = "C:/Programmieren/BA/Testdaten/xTrain.csv", row.names = FALSE)
+write.csv(xTest, file = "C:/Programmieren/BA/Testdaten/xTest.csv", row.names = FALSE)
+write.csv(yTrain, file = "C:/Programmieren/BA/Testdaten/yTrain.csv", row.names = FALSE)
+write.csv(yTest, file = "C:/Programmieren/BA/Testdaten/yTest.csv", row.names = FALSE)
 
 
 xTrain <- as.data.frame(lapply(xTrain, as.numeric))
