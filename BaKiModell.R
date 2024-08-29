@@ -47,7 +47,7 @@ y <- final_df2_loaded$Gesamt_MEASURE_FAIL_CODE
 
 
 
-set.seed(101)
+set.seed(FALSE)
 trainIndex <- caret::createDataPartition(y, p = 0.7, list = FALSE)
 xTrain <- x[trainIndex,]
 xTest <- x[-trainIndex,]
@@ -75,7 +75,10 @@ xTest <- predict(newScaler, xTest)
 #yTrain <- unlist(yTrain)
 #yTestScale <- unlist(yTestScale)
 
-
+write.csv(xTrain, file = "/home/justin.simon/repos/BA/Testdaten/xTrain.csv", row.names = FALSE)
+write.csv(xTest, file = "/home/justin.simon/repos/BA/Testdaten/xTest.csv", row.names = FALSE)
+write.csv(yTrain, file = "/home/justin.simon/repos/BA/Testdaten/yTrain.csv", row.names = FALSE)
+write.csv(yTest, file = "/home/justin.simon/repos/BA/Testdaten/yTest.csv", row.names = FALSE)
 
 
 xTrain <- as.data.frame(lapply(xTrain, as.numeric))
