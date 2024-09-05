@@ -3,6 +3,11 @@ library(dplyr)
 library(tidyr)
 library(caret)
 
+library(rpart)  # Für Entscheidungsbäume
+
+library(ggplot2)  # Für die Visualisierung
+library(e1071)  # Wird von 'caret' benötigt
+
 file_path <- "/home/justin.simon/repos/BA/Testdaten/final_df2_cleaned.csv"
 
 # CSV-Datei als DataFrame laden
@@ -146,7 +151,7 @@ model_gbm <- train(
 	verbose = TRUE
 )
 
-vorhersage <- predict(model_rf, xTest)
+vorhersage <- predict(model, xTest)
 
 yTest <- factor(yTest)
 vorhersage <- factor(vorhersage, levels = levels(yTest))
@@ -158,3 +163,44 @@ conf_matrix <- confusionMatrix(vorhersage, yTest)
 print(conf_matrix)
 
 print(vorhersage)
+
+
+
+
+
+
+
+x_train = xTrain
+x_test = xTest
+y_train = yTrain
+y_test = yTest
+
+
+# Modell erstellen und trainieren
+set.seed(101)
+modelBaum <- rpart(y_train ~ ., data = x_train, method = "class")
+
+# Vorhersagen treffen
+y_pred <- predict(modelBaum, x_test, type = "class")
+
+# Modell bewerten: Accuracy
+accuracy <- mean(y_pred == y_test)
+cat("Accuracy:", accuracy, "\n")
+
+# Classification Report (Precision, Recall, F1)
+report <- confusionMatrix(factor(y_pred), factor(y_test))
+cat("Classification Report:\n")
+print(report)
+
+# Confusion Matrix
+conf_matrix <- report$table
+cat("Confusion Matrix:\n")
+print(conf_matrix)
+
+# Confusion Matrix visualisieren
+ggplot(data = as.data.frame(conf_matrix), aes(x = Prediction, y = Reference)) +
+	geom_tile(aes(fill = Freq), color = "white") +
+	scale_fill_gradient(low = "white", high = "blue") +
+	geom_text(aes(label = Freq), vjust = 1) +
+	labs(x = "Predicted Label", y = "True Label", title = "Confusion Matrix") +
+	theme_minimal()
