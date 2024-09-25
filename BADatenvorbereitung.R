@@ -17,7 +17,6 @@ measure_fail_code_per_booking <- data %>%
   group_by(BOOKING_ID) %>%
   summarize(Gesamt_MEASURE_FAIL_CODE = ifelse(any(MEASURE_FAIL_CODE == 1), 1, 0))
 
-
 # Filtern der MEASURE_NAMEs, die mindestens 1000 Einträge haben
 valid_measure_names <- data %>%
   group_by(MEASURE_NAME) %>%
@@ -56,8 +55,6 @@ invalid_measure_names <- invalid_measure_values_count %>%
 data_filtered2 <- data_filtered %>%
   filter(!MEASURE_NAME %in% invalid_measure_names$MEASURE_NAME)
 
-
-
 # Pivotieren der Daten, Hinzufügen von Zusatzinformationen und Zusammenführen
 data_wide <- data_filtered2 %>%
   select(BOOKING_ID, MEASURE_NAME, MEASURE_VALUE) %>%
@@ -77,26 +74,12 @@ final_df <- data_wide %>%
   left_join(measure_fail_code_per_booking, by = "BOOKING_ID") %>%
   left_join(additional_info, by = "BOOKING_ID") 
 
-
-
-
-if ("ComputerName" %in% names(final_df)) {
-  print("Die Spalte 'ComputerName' existiert im Dataframe.")
-} else {
-  print("Die Spalte 'ComputerName' existiert nicht im Dataframe.")
-}
-
-
 formula <- ~ ComputerName + DMM_SN + `Messergebnis DMC`
-
 dummies <- dummyVars(formula, data = final_df)
 one_hot_encoded <- predict(dummies, newdata = final_df)
 one_hot_encoded_df <- as.data.frame(one_hot_encoded)
 one_hot_encoded_df[is.na(one_hot_encoded_df)] <- 0
 final_df <- cbind(final_df, one_hot_encoded_df)
-
-
-
 
 final_df2 <- final_df %>%
   mutate(
@@ -105,66 +88,14 @@ final_df2 <- final_df %>%
   ) %>%
   select(-MEASURE_TYPE)
 
-
 final_df2 <- final_df2[, !(names(final_df2) %in% c("ComputerName", "DMM_SN", "Messergebnis DMC"))]
 
-
+# Wandelt den Inhalt in Zahlen um Letzten drei Ziffern / Buchstaben werden abgeschnitten
 final_df2$WORKORDER_NUMBER <- as.numeric(substr(final_df2$WORKORDER_NUMBER, 1, nchar(final_df2$WORKORDER_NUMBER) - 3))
 
-contains_negative_one <- any(final_df2 == -1)
-contains_negative_one
-count_negative_one <- sum(final_df2 <= 0, na.rm = TRUE)
-count_negative_one
+final_df2_cleaned <- final_df2
 
-
-
-
-
-
-
-
-
-rows_to_remove <- apply(final_df2, 1, function(row) any(row == -1, na.rm = TRUE))
-
-# Entfernen der betroffenen Zeilen
-final_df2_cleaned <- final_df2[!rows_to_remove, ]
-
-# Ergebnis anzeigen
-print(final_df2_cleaned)
-
-
-
-
-
-
-
-
-count_negative_if_na <- function(column) {
-  if (any(is.na(column))) {
-    return(sum(column == -1, na.rm = TRUE))
-  } else {
-    return(0)
-  }
-}
-
-# Zähler für jede Spalte initialisieren
-negative_counts <- sapply(final_df2_cleaned, count_negative_if_na)
-
-# In DataFrame umwandeln
-result_df <- data.frame(Spalte = names(negative_counts), Zähler = negative_counts)
-
-# Ergebnis anzeigen
-print(result_df)
-
-
-
-
-
-
-final_df2_cleaned <- final_df2_cleaned %>%
-  mutate(across(everything(), ~ ifelse(is.na(.), -1, .)))
-
-
+final_df2_cleaned <- final_df2_cleaned[, !names(final_df2_cleaned) %in% c("BOOK_DATE", "BOOKING_ID")]
 
 convert_to_numeric <- function(df) {
   df <- as.data.frame(lapply(df, function(x) {
@@ -187,23 +118,5 @@ convert_to_numeric <- function(df) {
 # Wandle alle Spalten in numerische Werte um
 final_df2_cleaned <- convert_to_numeric(final_df2_cleaned)
 
-# Überprüfe die Struktur des neuen DataFrames
-str(final_df2_cleaned)
-
-# Überprüfe, ob noch Nicht-Numerische Werte vorhanden sind
-any(is.na(final_df2_cleaned))
-
-
-
-
-
-
 write.csv(final_df2_cleaned, file = "/home/justin.simon/repos/BA/Testdaten/final_df2_cleaned.csv", row.names = FALSE)
-
-# Bestätigung ausgeben
 cat("DataFrame wurde in '/home/justin.simon/repos/BA/Testdaten/final_df2_cleaned.csv' gespeichert.\n")
-
-
-
-
-

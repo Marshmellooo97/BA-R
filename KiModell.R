@@ -52,7 +52,7 @@ y <- final_df2_loaded$Gesamt_MEASURE_FAIL_CODE
 
 
 
-set.seed(FALSE)
+set.seed(123)
 trainIndex <- caret::createDataPartition(y, p = 0.7, list = FALSE)
 xTrain <- x[trainIndex,]
 xTest <- x[-trainIndex,]
@@ -60,25 +60,16 @@ yTrain <- y[trainIndex]
 yTest <- y[-trainIndex]
 
 
+
+
+
+
+
+
 newScaler <- caret::preProcess(xTrain, method = 'range')
 xTrain <- predict(newScaler, xTrain)
 xTest <- predict(newScaler, xTest)
 
-
-# Labels in Datenrahmen umwandeln und Spaltennamen setzen
-#yTrain <- as.data.frame(yTrain)
-#yTestScale <- as.data.frame(yTest)
-#colnames(yTrain) <- 'Gesamt_MEASURE_FAIL_CODE'
-#colnames(yTestScale) <- 'Gesamt_MEASURE_FAIL_CODE'
-
-
-# Skalierungsobjekt für Labels erstellen und skalieren
-#scalerLabels <- caret::preProcess(yTrain, method = 'range')
-#yTrain <- predict(scalerLabels, yTrain)
-#yTestScale <- predict(scalerLabels, yTestScale)
-
-#yTrain <- unlist(yTrain)
-#yTestScale <- unlist(yTestScale)
 
 write.csv(xTrain, file = "/home/justin.simon/repos/BA/Testdaten/xTrain.csv", row.names = FALSE)
 write.csv(xTest, file = "/home/justin.simon/repos/BA/Testdaten/xTest.csv", row.names = FALSE)
@@ -88,11 +79,6 @@ write.csv(yTest, file = "/home/justin.simon/repos/BA/Testdaten/yTest.csv", row.n
 
 xTrain <- as.data.frame(lapply(xTrain, as.numeric))
 yTrain <- as.factor(yTrain)
-
-
-xTrain <- as.data.frame(xTrain)
-xTrain_matrix <- as.matrix(xTrain)
-
 
 model <- train(
 	x = xTrain, 
@@ -111,24 +97,33 @@ model <- train(
 
 
 
-
-
-
-
-
 model_rf <- train(
 	x = xTrain, 
 	y = yTrain,
 	method = 'rf',
 	trControl = trainControl(
 		method = 'cv', 
-		number = 10, 
+		number = 5, 
 		verboseIter = TRUE
 	),
 	tuneGrid = expand.grid(
-		mtry = c(2, 4, 6, 8)  # Anpassen basierend auf der Anzahl der Features
+		mtry = c(10,15,20,25)  # Anpassen basierend auf der Anzahl der Features
 	),
 	verbose = TRUE
+)
+
+model_rpart <- train(
+	x = xTrain, 
+	y = yTrain,
+	method = 'rpart',  # Methode für Decision Tree
+	trControl = trainControl(
+		method = 'cv', 
+		number = 5,  # Hier die Anzahl der Folds festlegen
+		verboseIter = TRUE  # Zeigt Fortschrittsmeldungen in der Konsole an
+	),
+	tuneGrid = expand.grid(
+		cp = c(0.001, 0.01, 0.05, 0.1)  # Tuning-Parameter für den Decision Tree (Komplexität)
+	)
 )
 
 
@@ -151,24 +146,45 @@ model_gbm <- train(
 	verbose = TRUE
 )
 
-vorhersage <- predict(model, xTest)
+vorhersage_rf <- predict(model_rf, xTest, type = "raw")
+vorhersage_rf <- ifelse(vorhersage_rf >= 0.5, 1, 0)
 
-yTest <- factor(yTest)
-vorhersage <- factor(vorhersage, levels = levels(yTest))
+yTest <- factor(yTest, levels = c(0, 1))
+vorhersage_rf <- factor(vorhersage_rf, levels = c(0, 1))
 
 # Erstellen der Verwirrungsmatrix
-conf_matrix <- confusionMatrix(vorhersage, yTest)
-
+conf_matrix <- confusionMatrix(vorhersage_rf, yTest)
 # Anzeige der Verwirrungsmatrix
 print(conf_matrix)
 
-print(vorhersage)
+
+
+vorhersage_rp <- predict(model_rpart, xTest, type = "raw")
+vorhersage_rp <- ifelse(vorhersage_rp >= 0.5, 1, 0)
+
+yTest <- factor(yTest, levels = c(0, 1))
+vorhersage_rp <- factor(vorhersage_rp, levels = c(0, 1))
+
+# Erstellen der Verwirrungsmatrix
+conf_matrix <- confusionMatrix(vorhersage_rp, yTest)
+# Anzeige der Verwirrungsmatrix
+print(conf_matrix)
 
 
 
 
+vorhersage_mlp <- predict(model, xTest, type = "raw")
+vorhersage_mlp <- ifelse(vorhersage_rp >= 0.5, 1, 0)
 
+yTest <- factor(yTest, levels = c(0, 1))
+vorhersage_mlp <- factor(vorhersage_mlp, levels = c(0, 1))
 
+# Erstellen der Verwirrungsmatrix
+conf_matrix <- confusionMatrix(vorhersage_mlp, yTest)
+# Anzeige der Verwirrungsmatrix
+print(conf_matrix)
+
+print(vorhersage_mlp)
 
 x_train = xTrain
 x_test = xTest
