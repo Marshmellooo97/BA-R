@@ -1,0 +1,8 @@
+"Function","CPU_Time","Time","RAM"
+"TimeDatenvorbereitung","33.32915","34.90828","7.302175"
+"BaumDatenvorbereitung","7.530689","8.127559","2.387618"
+"BaumModellTrainieren","7.364218","7.4041","0.7935685"
+"BaumVorhersagen","0.05532228","0.05618523","0.2255758"
+"MLPDatenvorbereitung","23.62465","23.45576","13.40714"
+"MLPModellTrainieren","2009.953","2004.07","0.3428656"
+"MLPVorhersagen","4.78884","4.779491","0.1421348"
